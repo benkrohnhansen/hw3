@@ -72,6 +72,7 @@ int main(int argc, char** argv) {
     for (auto& kmer : kmers) {
         bool success = hashmap.insert(kmer);
         if (!success) {
+            BUtil::print("INSERT WAS NOT A SUCCESS");
             throw std::runtime_error("Error: HashMap is full!");
         }
 
