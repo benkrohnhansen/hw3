@@ -76,6 +76,7 @@ bool HashMap::insert(const kmer_pair& kmer) {
         //     hash, kmer, self_ptr
         // ).wait();
         // return success;
+        return true;
     }
 }
 
