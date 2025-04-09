@@ -2,6 +2,7 @@
 
 #include "kmer_t.hpp"
 #include <upcxx/upcxx.hpp>
+#include <iostream>
 
 struct HashMap {
     upcxx::global_ptr<HashMap> self_ptr;
@@ -45,6 +46,7 @@ bool HashMap::insert(const kmer_pair& kmer) {
     int owner_rank = hash % upcxx::rank_n();
 
     if (owner_rank == upcxx::rank_me()){
+        std::cout << "Doing self\n";
         bool success = false;
         do {
             uint64_t slot = (hash + probe++) % size();
@@ -56,6 +58,7 @@ bool HashMap::insert(const kmer_pair& kmer) {
         return success;
     }
     else {
+        std::cout << "Doing RPC\n";
         bool success = upcxx::rpc(
             owner_rank,
             [](uint64_t hash, kmer_pair kmer, upcxx::global_ptr<HashMap> map_ptr) {
