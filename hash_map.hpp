@@ -141,7 +141,3 @@ bool HashMap::request_slot(uint64_t slot) {
 }
 
 size_t HashMap::size() const noexcept { return my_size; }
-
-HashMap::~HashMap() {
-    upcxx::delete_(self_ptr);
-}
