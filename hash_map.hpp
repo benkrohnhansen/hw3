@@ -59,23 +59,23 @@ bool HashMap::insert(const kmer_pair& kmer) {
     }
     else {
         std::cout << "Doing RPC\n";
-        bool success = upcxx::rpc(
-            owner_rank,
-            [](uint64_t hash, kmer_pair kmer, upcxx::global_ptr<HashMap> map_ptr) {
-                HashMap* local_map = map_ptr.local();
-                uint64_t probe = 0;
-                while (probe < local_map->size()) {
-                    uint64_t slot = (hash + probe++) % local_map->size();
-                    if (local_map->request_slot(slot)) {
-                        local_map->write_slot(slot, kmer);
-                        return true;
-                    }
-                }
-                return false;
-            },
-            hash, kmer, self_ptr
-        ).wait();
-        return success;
+        // bool success = upcxx::rpc(
+        //     owner_rank,
+        //     [](uint64_t hash, kmer_pair kmer, upcxx::global_ptr<HashMap> map_ptr) {
+        //         HashMap* local_map = map_ptr.local();
+        //         uint64_t probe = 0;
+        //         while (probe < local_map->size()) {
+        //             uint64_t slot = (hash + probe++) % local_map->size();
+        //             if (local_map->request_slot(slot)) {
+        //                 local_map->write_slot(slot, kmer);
+        //                 return true;
+        //             }
+        //         }
+        //         return false;
+        //     },
+        //     hash, kmer, self_ptr
+        // ).wait();
+        // return success;
     }
 }
 
