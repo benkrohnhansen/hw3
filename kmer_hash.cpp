@@ -50,6 +50,8 @@ int main(int argc, char** argv) {
     size_t hash_table_size = n_kmers * (1.0 / 0.5);
     HashMap hashmap(hash_table_size);
 
+    BUtil::print("Rank %d and table size %d". upcxx::rank_me(), hash_table_size);
+
     if (run_type == "verbose") {
         BUtil::print("Initializing hash table of size %d for %d kmers.\n", hash_table_size,
                      n_kmers);
