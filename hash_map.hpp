@@ -111,7 +111,7 @@ class DistributedHashMap {
             HashMap* local = lmap->local();
             local->insert(kmer);
             }, local_map_g, kmer);
-            std::cout << "from " << upcxx:rank_me() << " to " << get_target_rank(hash) << std::endl;
+            std::cout << "from " << upcxx::rank_me() << " to " << get_target_rank(hash) << std::endl;
         }   
     
         size_t size() const {
