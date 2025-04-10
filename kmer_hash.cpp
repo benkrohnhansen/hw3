@@ -123,7 +123,7 @@ int main(int argc, char** argv) {
                      + hash_table_size % upcxx::rank_n();
     size_t rank_end = rank_start + local_size;
 
-    std::cout << "rank " << upcxx::rank_me() << "Rank start " << rank_start << " rank end " << rank_end;
+    std::cout << "rank " << upcxx::rank_me() << "Rank start " << rank_start << " rank end " << rank_end << "\n";
     
     upcxx::barrier();
     // std::vector<upcxx::future<>> futures;
@@ -136,8 +136,7 @@ int main(int argc, char** argv) {
 
         hashmap.insert(kmer);
 
-        if (i > 10) break;
-        i++;
+        if (i > 20) break;
     }
 
     // upcxx::when_all(futures.begin(), futures.end()).wait();
