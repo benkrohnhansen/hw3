@@ -132,7 +132,7 @@ class DistributedHashMap {
             return local_map->request_slot();
         }
 
-        upcxx::future<> HashMap::dist_insert(const kmer_pair& kmer) {
+        upcxx::future<> insert(const kmer_pair& kmer) {
         uint64_t hash = kmer.hash();
         return upcxx::rpc(get_target_rank(hash),
             // lambda to insert the key-value pair
