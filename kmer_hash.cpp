@@ -124,7 +124,7 @@ int main(int argc, char** argv) {
         // if (kmer.backwardExt() == 'F') {
         //     start_nodes.push_back(kmer);
         // }
-        std::cout << "Rank " << upc::xx << " sending " << kmer.kmer_str() << std::endl;
+        std::cout << "Rank " << upcxx::rank_me() << " sending " << kmer.kmer_str() << std::endl;
         if (i > 10) break;
         i++;
     }
