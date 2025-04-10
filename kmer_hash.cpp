@@ -136,7 +136,7 @@ int main(int argc, char** argv) {
 
         if (kmer.backwardExt() == 'F') {
             start_nodes.push_back(kmer);
-            std::cout << "rank " << upcxx::rank_me() << " kmer " << kmer.kmer_str() << " " << kmer.backwardExt << std::endl;
+            std::cout << "rank " << upcxx::rank_me() << " kmer " << kmer.kmer_str() << " " << kmer.backwardExt() << std::endl;
         }
         // if (i > 20) break;
     }
