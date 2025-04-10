@@ -5,9 +5,11 @@
 #include <iostream>
 
 struct HashMap {
-    using dist_data upcxx::dist_object<std::vector<kmer_pair>>;    
+    using dist_data = upcxx::dist_object<std::vector<kmer_pair>>;    
     dist_data local_data;
-    upcxx::dist_object<std::vector<int>> local_used;
+
+    using dist_used = upcxx::dist_object<std::vector<int>>;
+    dist_used local_used;
 
     size_t my_size;
 
@@ -38,8 +40,8 @@ struct HashMap {
 HashMap::HashMap(size_t size) {
     // self_ptr = upcxx::new_<HashMap>(*this);
     my_size = size;
-    data.resize(size);
-    used.resize(size, 0);
+    local_data.resize(size);
+    local_used.resize(size, 0);
 }
 
 int HashMap::get_target_rank(const std::string &hash) {
