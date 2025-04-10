@@ -124,7 +124,7 @@ int main(int argc, char** argv) {
 
     std::vector<upcxx::future<>> futures;
 
-    for (for int i = rank_start; i < rank_end; i++) {
+    for (int i = rank_start; i < rank_end; i++) {
         futures.push_back(hashmap.insert(kmers[i]));
 
         std::cout << "Rank " << upcxx::rank_me() << " sending " << kmer.kmer_str() << std::endl;
