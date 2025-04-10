@@ -97,7 +97,7 @@ class DistributedHashMap {
         bool insert(const kmer_pair& kmer) {
             return true;
         }
-}
+};
 
 
 // #pragma once
