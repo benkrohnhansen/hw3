@@ -59,45 +59,9 @@ int main(int argc, char** argv) {
 
     // ==============================================
     
-    int rank = upcxx::rank_me();
-    int n_ranks = upcxx::rank_n();
-
-    // Each rank holds an integer in a dist_object
-    upcxx::dist_object<int> dist_val(rank);
-
-    // Ensure all ranks initialized their dist_object
-    upcxx::barrier();
-
-    // Rank 0 will do the following:
-    // - rget value from rank 1 (if it exists)
-    // - rput value to rank 1 (if it exists)
-    // - rpc to rank 1 (if it exists)
-    if (rank == 0 && n_ranks > 1) {
-        // rget from rank 1
-        upcxx::future<int> fut_val = upcxx::rget(dist_val.fetch(1));
-        int val = fut_val.wait();
-
-        std::cout << "Rank 0: rget from rank 1 got value = " << val << std::endl;
-
-        // rput to rank 1 (send value 42)
-        upcxx::rput(42, dist_val.fetch(1)).wait();
-
-        std::cout << "Rank 0: rput 42 to rank 1" << std::endl;
-
-        // rpc to rank 1
-        upcxx::rpc(1, []() {
-            std::cout << "Rank 1 (via rpc): Hello from rank 1!" << std::endl;
-        }).wait();
-    }
-
-    upcxx::barrier();
-
-    // Final output from rank 0 to confirm execution
-    if (rank == 0) {
-        std::cout << "Rank 0: Finished UPC++ demo." << std::endl;
-    }
+    cout << "Hello world from process " << upcxx::rank_me()
+    << " out of " << upcxx::rank_n() << " processes" << endl;
     // ==============================================
-
     upcxx::finalize();
     return 0;
 }
