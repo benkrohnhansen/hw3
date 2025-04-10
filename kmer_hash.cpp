@@ -91,7 +91,11 @@ int main(int argc, char** argv) {
 
     // Load factor of 0.5
     size_t hash_table_size = n_kmers * (1.0 / 0.5);
-    DistributedHashMap hashmap(hash_table_size);
+    size_t local_size = (hash_table_size / upcxx::rank_n());
+    if (hash_table_size % upcxx::rank_n() > upcxx::rank_me) {
+        local_size++;
+    }
+    DistributedHashMap hashmap(local_size);
 
     if (run_type == "verbose") {
         BUtil::print("Initializing hash table of size %d for %d kmers.\n", hash_table_size,
@@ -114,20 +118,24 @@ int main(int argc, char** argv) {
         std::cout << "Size " << hashmap.size() << std::endl;
     }
 
-    int i = 0;
-    for (auto& kmer : kmers) {
-        upcxx::future<> success = hashmap.insert(kmer);
-        // if (!success) {
-        //     throw std::runtime_error("Error: HashMap is full!");
-        // }
+    int rank_start = upcxx::rank_me() * (hash_table_size / upcxx::rank_n()) 
+                     + hash_table_size % upcxx::rank_n();
+    int rank_end = rank_start + local_size;
 
-        // if (kmer.backwardExt() == 'F') {
-        //     start_nodes.push_back(kmer);
-        // }
+    std::vector<upcxx::future<>> futures;
+
+    for (for int i = rank_start; i < rank_end; i++) {
+        futures.push_back(hashmap.insert(kmers[i]));
+
         std::cout << "Rank " << upcxx::rank_me() << " sending " << kmer.kmer_str() << std::endl;
         if (i > 10) break;
         i++;
     }
+
+    upcxx::when_all(futures.begin(), futures.end()).wait();
+    // if (kmer.backwardExt() == 'F') {
+    //     start_nodes.push_back(kmer);
+    // }
 
     upcxx::barrier();
     

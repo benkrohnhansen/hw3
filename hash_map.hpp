@@ -42,7 +42,7 @@ bool HashMap::insert(const kmer_pair& kmer) {
     do {
         uint64_t slot = (hash + probe++) % size();
         success = request_slot(slot);
-        std::cout << "Rank " << upcxx::rank_me() << " insert success: " << success << std::endl;
+        // std::cout << "Rank " << upcxx::rank_me() << " insert success: " << success << std::endl;
         if (success) {
             write_slot(slot, kmer);
         }
@@ -77,12 +77,13 @@ bool HashMap::request_slot(uint64_t slot) {
         return false;
     } else {
         used[slot] = 1;
-        std::cout << "Rank " << upcxx::rank_me() << " used " << slot << " to 1\n"; 
+        // std::cout << "Rank " << upcxx::rank_me() << " used " << slot << " to 1\n"; 
         return true;
     }
 }
 
 size_t HashMap::size() const noexcept { return my_size; }
+
 
 class DistributedHashMap {
     private:
