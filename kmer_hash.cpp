@@ -114,7 +114,7 @@ int main(int argc, char** argv) {
         std::cout << "Size " << hashmap.size() << std::endl;
     }
 
-    int i == 0;
+    int i = 0;
     for (auto& kmer : kmers) {
         upcxx::future<> success = hashmap.insert(kmer);
         // if (!success) {
