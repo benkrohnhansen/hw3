@@ -59,8 +59,8 @@ int main(int argc, char** argv) {
 
     // ==============================================
     
-    cout << "Hello world from process " << upcxx::rank_me()
-    << " out of " << upcxx::rank_n() << " processes" << endl;
+    std::cout << "Hello world from process " << upcxx::rank_me()
+    << " out of " << upcxx::rank_n() << " processes" << std::endl;
     // ==============================================
     upcxx::finalize();
     return 0;
