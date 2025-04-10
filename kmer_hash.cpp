@@ -66,6 +66,8 @@ int main(int argc, char** argv) {
     // size_t hash_table_size = n_kmers * (1.0 / 0.5);
     size_t hash_table_size = kmers.size() * (1.0 / 0.5);
 
+    // std::cout << "Rank " << upcxx::rank_me() << " kemrs size " << kmers 
+
     // DistributedHashMap hashmap(local_size);
     DistributedHashMap hashmap(hash_table_size);
 
@@ -123,7 +125,7 @@ int main(int argc, char** argv) {
         contigs.push_back(contig);
     }
 
-    if (upcxx::rank_me() == 0) {
+    if (upcxx::rank_me() == 1) {
         const auto& first_contig = contigs.front();
         int count = 0;
         for (const auto& kmer : first_contig) {
