@@ -14,6 +14,8 @@
 
 #include "butil.hpp"
 
+#include <iostream>
+
 int main(int argc, char** argv) {
     upcxx::init();
 
@@ -62,7 +64,40 @@ int main(int argc, char** argv) {
         BUtil::print("Rank %i sees all maps [%i]=%d\n", upcxx::rank_me(), i, all_maps[i]);
     }
 
+    // ========================================================
+    if (upcxx::rank_me() == 1) {
+        kmer_pair test_kmer;
+        // Set test values
+        test_kmer.kmer.set("AAAAAAAAAAAAAAAAAAA");  // 19-mer
+        test_kmer.forward_ext = 'T';
+        test_kmer.backward_ext = 'C';
+    
+        // Write it to slot 42
+        hashmap.write_slot(42, test_kmer);
+        BUtil::print("Rank 1 wrote test_kmer to slot 42\n");
+    }
+
     upcxx::barrier();
+
+    if (upcxx::rank_me() == 0) {
+        kmer_pair received;
+    
+        bool success = upcxx::rpc(
+            /* target rank */ 1,
+            /* lambda to run remotely */ [](upcxx::global_ptr<HashMap> ptr, int slot) -> kmer_pair {
+                return ptr.local()->read_slot(slot);
+            },
+            /* args */ hashmap_ptr, 42
+        ).wait();
+    
+        std::string kmer_str = received.kmer.to_string();
+        BUtil::print("Rank 0 retrieved from rank 1: %s, f=%c, b=%c\n",
+               kmer_str.c_str(), received.forward_ext, received.backward_ext);
+    }
+
+    upcxx::barrier();
+
+    // ========================================================
 
     BUtil::print("Rank %i and table size %i\n", upcxx::rank_me(), hash_table_size);
 
