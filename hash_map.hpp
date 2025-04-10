@@ -104,7 +104,7 @@ class DistributedHashMap {
 
         upcxx::future<> insert(const kmer_pair& kmer) {
             uint64_t hash = kmer.hash();
-            std::cout << "from " << upcxx::rank_me() << " to " << get_target_rank(hash) << std::endl;
+            // std::cout << "from " << upcxx::rank_me() << " to " << get_target_rank(hash) << std::endl;
             return upcxx::rpc(get_target_rank(hash),
                 // lambda to insert the key-value pair
                 [](dist_hash_map &lmap, const kmer_pair &kmer) {
