@@ -134,7 +134,7 @@ int main(int argc, char** argv) {
 
         std::cout << "kmer " << kmer.kmer_str() << std::endl;
 
-        hashmap.insert(kmer);
+        upcxx::future<> future = hashmap.insert(kmer);
 
         if (i > 20) break;
     }
