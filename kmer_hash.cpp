@@ -61,9 +61,9 @@ int main(int argc, char** argv) {
     
     upcxx::global_ptr<int> x = upcxx::new_<int>(42);
 
-    if (upcxx::rank_me() == 0){
-        x = 69;
-    }
+    // if (upcxx::rank_me() == 0){
+    //     x = 69;
+    // }
 
     if (upcxx::rank_me() == 0){
         std::cout << "X0 " << x << std::endl;
