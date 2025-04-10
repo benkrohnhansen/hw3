@@ -108,7 +108,8 @@ size_t HashMap::size() const noexcept { return my_size; }
 
 class DistributedHashMap {
     private:
-        upcxx::dist_object<upcxx::global_ptr<HashMap>> local_map_g;
+        using dist_hash_map = upcxx::dist_object<upcxx::global_ptr<HashMap>>;
+        dist_hash_map local_map_g;
         HashMap* local_map;
     
         int get_target_rank(const std::string &key) {
@@ -126,6 +127,20 @@ class DistributedHashMap {
             // You'd want to implement logic here to send kmer to the right rank using RPC
             return true;
         }
+
+        bool request_slot(uint64_t slot) {
+            return local_map->request_slot();
+        }
+
+        upcxx::future<> HashMap::dist_insert(const kmer_pair& kmer) {
+        uint64_t hash = kmer.hash();
+        return upcxx::rpc(get_target_rank(hash),
+            // lambda to insert the key-value pair
+            [](dist_hash_map &lmap, const kmer_pair &kmer) {
+            // insert into the local map at the target
+            lmap->insert({kmer});
+            }, local_map_g, kmer);
+        }   
     
         size_t size() const {
             return local_map->size();

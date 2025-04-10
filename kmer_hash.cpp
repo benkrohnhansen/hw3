@@ -135,13 +135,13 @@ int main(int argc, char** argv) {
     //     x = 69;
     // }
 
-    if (upcxx::rank_me() == 0){
-        std::cout << "X0 " << x << std::endl;
-    }
+    // if (upcxx::rank_me() == 0){
+    //     std::cout << "X0 " << x << std::endl;
+    // }
 
-    if (upcxx::rank_me() == 1){
-        std::cout << "X1 " << x << std::endl;
-    }
+    // if (upcxx::rank_me() == 1){
+    //     std::cout << "X1 " << x << std::endl;
+    // }
 
     upcxx::delete_(x);
     
