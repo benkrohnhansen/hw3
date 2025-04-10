@@ -98,6 +98,25 @@ int main(int argc, char** argv) {
                      n_kmers);
     }
 
+    upcxx::barrier();
+
+    auto start = std::chrono::high_resolution_clock::now();
+
+    std::vector<kmer_pair> start_nodes;
+
+    for (auto& kmer : kmers) {
+        bool success = hashmap.dist_insert(kmer);
+        if (!success) {
+            throw std::runtime_error("Error: HashMap is full!");
+        }
+
+        if (kmer.backwardExt() == 'F') {
+            start_nodes.push_back(kmer);
+        }
+    }
+    auto end_insert = std::chrono::high_resolution_clock::now();
+    upcxx::barrier();
+
     // ==============================================
     
     upcxx::global_ptr<int> x = upcxx::new_<int>(42);
@@ -124,29 +143,6 @@ int main(int argc, char** argv) {
     if (upcxx::rank_me() == 0){
         std::cout << "Xarr1 " << local_ptr[1] << std::endl;
     }
-
-
-
-    const long N = 10;
-    DistrMap dmap;
-    // insert set of unique key, value pairs into hash map, wait for completion
-    for (long i = 0; i < N; i++) {
-      string key = to_string(upcxx::rank_me()) + ":" + to_string(i);
-      string val = key;
-      dmap.insert(key, val).wait();
-    }
-    // barrier to ensure all insertions have completed
-    upcxx::barrier();
-    // now try to fetch keys inserted by neighbor
-    for (long i = 0; i < N; i++) {
-      string key = to_string((upcxx::rank_me() + 1) % upcxx::rank_n()) + ":" + to_string(i);
-      string val = dmap.find(key).wait();
-      // check that value is correct
-      std::cout << "rank " << upcxx::rank_me() << "key " << key << "value " << val << std::endl;
-      UPCXX_ASSERT(val == key);
-    }
-    upcxx::barrier(); // wait for finds to complete globally
-    if (!upcxx::rank_me()) cout << "SUCCESS" << std::endl;
 
     // ==============================================
     upcxx::finalize();

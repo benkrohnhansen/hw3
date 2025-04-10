@@ -4,9 +4,10 @@
 #include <upcxx/upcxx.hpp>
 #include <iostream>
 
-struct HashMap {    
-    std::vector<kmer_pair> data;
-    std::vector<int> used;
+struct HashMap {
+    using dist_data upcxx::dist_object<std::vector<kmer_pair>>;    
+    dist_data local_data;
+    upcxx::dist_object<std::vector<int>> local_used;
 
     size_t my_size;
 
@@ -16,7 +17,7 @@ struct HashMap {
 
     // Most important functions: insert and retrieve
     // k-mers from the hash table.
-    bool insert(const kmer_pair& kmer, std::vector<upcxx::global_ptr<HashMap>>& all_maps);
+    bool insert(const kmer_pair& kmer);
     bool find(const pkmer_t& key_kmer, kmer_pair& val_kmer);
 
     // Helper functions
@@ -28,6 +29,10 @@ struct HashMap {
     // Request a slot or check if it's already used.
     bool request_slot(uint64_t slot);
     bool slot_used(uint64_t slot);
+
+    // Dist functionality 
+    int get_target_rank(const std::string &hash);
+    upcxx::future<> dist_insert(const kmer_pair& kmer);
 };
 
 HashMap::HashMap(size_t size) {
@@ -37,68 +42,53 @@ HashMap::HashMap(size_t size) {
     used.resize(size, 0);
 }
 
-bool HashMap::insert(const kmer_pair& kmer, std::vector<upcxx::global_ptr<HashMap>>& all_maps) {
+int HashMap::get_target_rank(const std::string &hash) {
+    return hash % upcxx::rank_n();
+}
+
+upcxx::future<> HashMap::dist_insert(const kmer_pair& kmer) {
+    uint64_t hash = kmer.hash();
+    return upcxx::rpc(get_target_rank(hash),
+        // lambda to insert the key-value pair
+        [](dist_data &ldata, const kmer_pair &kmer) {
+        // insert into the local map at the target
+        ldata->insert({kmer});
+        }, local_data, kmer);
+}
+
+bool HashMap::insert(const kmer_pair& kmer) {
     uint64_t hash = kmer.hash();
     uint64_t probe = 0;
-
-    int owner_rank = hash % upcxx::rank_n();
-
-    if (owner_rank == upcxx::rank_me()){
-        std::cout << "Doing self\n";
-        bool success = false;
-        do {
-            uint64_t slot = (hash + probe++) % size();
-            success = request_slot(slot);
-            if (success) {
-                write_slot(slot, kmer);
-            }
-        } while (!success && probe < size());
-        return success;
-    }
-    else {
-        // Remote insert via RPC
-        upcxx::global_ptr<HashMap> target_ptr = all_maps[owner_rank];
-
-        bool success = upcxx::rpc(
-            owner_rank,
-            [](uint64_t hash, kmer_pair kmer, upcxx::global_ptr<HashMap> map_ptr) {
-                HashMap* local_map = map_ptr.local(); // This is now safe
-                uint64_t probe = 0;
-                while (probe < local_map->size()) {
-                    uint64_t slot = (hash + probe++) % local_map->size();
-                    if (local_map->request_slot(slot)) {
-                        local_map->write_slot(slot, kmer);
-                        return true;
-                    }
-                }
-                return false;
-            },
-            hash, kmer, target_ptr
-        ).wait();
-
-        return success;
-    }
+    bool success = false;
+    do {
+        uint64_t slot = (hash + probe++) % size();
+        success = request_slot(slot);
+        if (success) {
+            write_slot(slot, kmer);
+        }
+    } while (!success && probe < size());
+    return success;
 }
 
 bool HashMap::find(const pkmer_t& key_kmer, kmer_pair& val_kmer) {
-    uint64_t hash = key_kmer.hash();
-    int owner_rank = hash % upcxx::rank_n();
+    // uint64_t hash = key_kmer.hash();
+    // int owner_rank = hash % upcxx::rank_n();
 
-    if (owner_rank == upcxx::rank_me()) {
-        // Local lookup — same logic as serial
-        uint64_t probe = 0;
-        bool success = false;
-        do {
-            uint64_t slot = (hash + probe++) % size();
-            if (slot_used(slot)) {
-                val_kmer = read_slot(slot);
-                if (val_kmer.kmer == key_kmer) {
-                    success = true;
-                }
-            }
-        } while (!success && probe < size());
-        return success;
-    } 
+    // if (owner_rank == upcxx::rank_me()) {
+    //     // Local lookup — same logic as serial
+    //     uint64_t probe = 0;
+    //     bool success = false;
+    //     do {
+    //         uint64_t slot = (hash + probe++) % size();
+    //         if (slot_used(slot)) {
+    //             val_kmer = read_slot(slot);
+    //             if (val_kmer.kmer == key_kmer) {
+    //                 success = true;
+    //             }
+    //         }
+    //     } while (!success && probe < size());
+    //     return success;
+    // } 
     return false;
 }
 
