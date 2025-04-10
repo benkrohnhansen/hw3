@@ -62,11 +62,15 @@ int main(int argc, char** argv) {
     upcxx::global_ptr<int> x = upcxx::new_<int>(42);
 
     if (upcxx::rank_me() == 0){
-        x = 42;
+        x = 69;
+    }
+
+    if (upcxx::rank_me() == 0){
+        std::cout << "X0 " << x << std::endl;
     }
 
     if (upcxx::rank_me() == 1){
-        std::cout << "X " << x << std::endl;
+        std::cout << "X1 " << x << std::endl;
     }
 
     upcxx::delete_(x);
