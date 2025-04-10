@@ -129,7 +129,7 @@ class DistributedHashMap {
             // lambda to insert the key-value pair
             [](dist_hash_map &lmap, const kmer_pair &kmer) {
             // insert into the local map at the target
-            HashMap* local = map->local();
+            HashMap* local = lmap->local();
             local->insert(kmer);
             }, local_map_g, kmer);
         }   
