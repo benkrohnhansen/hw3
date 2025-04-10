@@ -97,34 +97,7 @@ bool HashMap::find(const pkmer_t& key_kmer, kmer_pair& val_kmer) {
             }
         } while (!success && probe < size());
         return success;
-    } else {
-        // Remote lookup via RPC
-        auto opt = upcxx::rpc(
-            owner_rank,
-            [](uint64_t hash, pkmer_t key_kmer, upcxx::global_ptr<HashMap> map_ptr) -> std::optional<kmer_pair> {
-                HashMap* local_map = map_ptr.local();
-                uint64_t probe = 0;
-                do {
-                    uint64_t slot = (hash + probe++) % local_map->size();
-                    if (local_map->slot_used(slot)) {
-                        kmer_pair candidate = local_map->read_slot(slot);
-                        if (candidate.kmer == key_kmer) {
-                            return candidate;
-                        }
-                    }
-                } while (probe < local_map->size());
-                return std::nullopt;
-            },
-            hash, key_kmer, self_ptr
-        ).wait();
-
-        if (opt.has_value()) {
-            val_kmer = opt.value();
-            return true;
-        } else {
-            return false;
-        }
-    }
+    } 
 }
 
 
