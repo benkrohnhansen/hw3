@@ -93,6 +93,10 @@ class DistributedHashMap {
     public:
         DistributedHashMap(size_t local_size)
             : local_map(HashMap(local_size)) {}
+
+        bool insert(const kmer_pair& kmer) {
+            return true;
+        }
 }
 
 
