@@ -125,17 +125,19 @@ int main(int argc, char** argv) {
 
     std::cout << "rank " << upcxx::rank_me() << "Rank start " << rank_start << " rank end " << rank_end;
 
-    std::vector<upcxx::future<>> futures;
+    // std::vector<upcxx::future<>> futures;
 
     for (int i = rank_start; i < rank_end; i++) {
         auto& kmer = kmers[i];
-        futures.push_back(hashmap.insert(kmer));
+        // futures.push_back(hashmap.insert(kmer));
+
+        hashmap.insert(kmer);
 
         if (i > 10) break;
         i++;
     }
 
-    upcxx::when_all(futures.begin(), futures.end()).wait();
+    // upcxx::when_all(futures.begin(), futures.end()).wait();
     // if (kmer.backwardExt() == 'F') {
     //     start_nodes.push_back(kmer);
     // }
