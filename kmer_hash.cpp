@@ -48,11 +48,16 @@ int main(int argc, char** argv) {
 
     // Load factor of 0.5
     size_t hash_table_size = n_kmers * (1.0 / 0.5);
-    HashMap hashmap(hash_table_size);
+    upcxx::global_ptr<HashMap> my_map = upcxx::new_<HashMap>(hash_table_size);
 
     std::vector<upcxx::global_ptr<HashMap>> all_maps(upcxx::rank_n());
 
-    all_maps[upcxx::rank_me()] = hashmap.self_ptr;
+    for (int i = 0; i < all_maps.size(); ++i) {
+        BUtil::print("Rank", upcxx::rank_me(), "sees all_maps[", i, "] =", all_maps[i]);
+    }   
+
+
+    all_maps[upcxx::rank_me()] = my_map;
 
     for (int i = 0; i < upcxx::rank_n(); i++) {
         all_maps[i] = upcxx::broadcast(all_maps[i], i).wait();
@@ -90,6 +95,8 @@ int main(int argc, char** argv) {
     }
     auto end_insert = std::chrono::high_resolution_clock::now();
     upcxx::barrier();
+
+    BUtil::print("FINISHED INSERT");
 
     double insert_time = std::chrono::duration<double>(end_insert - start).count();
     if (run_type != "test") {
