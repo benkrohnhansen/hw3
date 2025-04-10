@@ -59,7 +59,7 @@ int main(int argc, char** argv) {
     all_maps[upcxx::rank_me()] = hashmap_ptr;
 
     for (int i = 0; i < all_maps.size(); ++i) {
-        BUtil::print("Rank %i sees all maps [%i]=%i", upcxx::rank_me(), i, all_maps[i]);
+        BUtil::print("Rank %i sees all maps [%i]=%d\n", upcxx::rank_me(), i, all_maps[i]);
     }
 
     upcxx::barrier();
