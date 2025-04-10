@@ -17,6 +17,9 @@
 #include <iostream>
 
 #include <map>
+
+using namespace std;
+
 class DistrMap {
     private:
       // store the local unordered map in a distributed object to access from RPCs
@@ -143,7 +146,7 @@ int main(int argc, char** argv) {
       UPCXX_ASSERT(val == key);
     }
     upcxx::barrier(); // wait for finds to complete globally
-    if (!upcxx::rank_me()) cout << "SUCCESS" << endl;
+    if (!upcxx::rank_me()) cout << "SUCCESS" << std::endl;
 
     // ==============================================
     upcxx::finalize();
