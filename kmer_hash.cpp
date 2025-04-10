@@ -59,8 +59,22 @@ int main(int argc, char** argv) {
 
     // ==============================================
     
-    std::cout << "Hello world from process " << upcxx::rank_me()
-    << " out of " << upcxx::rank_n() << " processes" << std::endl;
+    upcxx::global_ptr<int> x = upcxx::new_<int>(42);
+
+    if (upcxx::rank_me() == 0){
+        x = 42;
+    }
+
+    if (upcxx::rank_me() == 1){
+        std::cout << "X " << x << std::endl;
+    }
+
+    upcxx::delete_(x);
+
+    // upcxx::global_ptr<int> x_arr = upcxx::new_array<int>(10);
+
+    // upcxx::delete_array(x_arr);
+
     // ==============================================
     upcxx::finalize();
     return 0;
