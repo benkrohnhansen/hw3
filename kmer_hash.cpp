@@ -16,6 +16,44 @@
 
 #include <iostream>
 
+#include <map>
+class DistrMap {
+    private:
+      // store the local unordered map in a distributed object to access from RPCs
+      using dobj_map_t = upcxx::dist_object<std::unordered_map<std::string, std::string> >;
+      dobj_map_t local_map;
+      // map the key to a target process
+      int get_target_rank(const std::string &key) {
+        return std::hash<std::string>{}(key) % upcxx::rank_n();
+      }
+    public:
+      // initialize the local map
+      DistrMap() : local_map({}) {}
+      // insert a key-value pair into the hash table
+      upcxx::future<> insert(const std::string &key, const std::string &val) {
+        // the RPC returns an empty upcxx::future by default
+        return upcxx::rpc(get_target_rank(key),
+                          // lambda to insert the key-value pair
+                          [](dobj_map_t &lmap, const std::string &key, const std::string &val) {
+                            // insert into the local map at the target
+                            lmap->insert({key, val});
+                          }, local_map, key, val);
+      }
+      // find a key and return associated value in a future
+      upcxx::future<std::string> find(const std::string &key) {
+        return upcxx::rpc(get_target_rank(key),
+                          // lambda to find the key in the local map
+                          [](dobj_map_t &lmap, const std::string &key) -> std::string {
+                            auto elem = lmap->find(key);
+                            if (elem == lmap->end()) return std::string(); // not found
+                            else return elem->second; // key found: return value
+                          }, local_map, key);
+      }
+    };
+
+
+
+
 int main(int argc, char** argv) {
     upcxx::init();
 
@@ -83,6 +121,29 @@ int main(int argc, char** argv) {
     if (upcxx::rank_me() == 0){
         std::cout << "Xarr1 " << local_ptr[1] << std::endl;
     }
+
+
+
+    const long N = 10;
+    DistrMap dmap;
+    // insert set of unique key, value pairs into hash map, wait for completion
+    for (long i = 0; i < N; i++) {
+      string key = to_string(upcxx::rank_me()) + ":" + to_string(i);
+      string val = key;
+      dmap.insert(key, val).wait();
+    }
+    // barrier to ensure all insertions have completed
+    upcxx::barrier();
+    // now try to fetch keys inserted by neighbor
+    for (long i = 0; i < N; i++) {
+      string key = to_string((upcxx::rank_me() + 1) % upcxx::rank_n()) + ":" + to_string(i);
+      string val = dmap.find(key).wait();
+      // check that value is correct
+      std::cout << "rank " << upcxx::rank_me() << "key " << key << "value " << val << std::endl;
+      UPCXX_ASSERT(val == key);
+    }
+    upcxx::barrier(); // wait for finds to complete globally
+    if (!upcxx::rank_me()) cout << "SUCCESS" << endl;
 
     // ==============================================
     upcxx::finalize();
