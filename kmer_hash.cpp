@@ -155,9 +155,9 @@ int main(int argc, char** argv) {
         hashmap.print_local();
     }
     
-        if (upcxx::rank_me() == 0) {
-            hashmap.print_local();
-        }
+    // if (upcxx::rank_me() == 0) {
+    //     hashmap.print_local();
+    // }
 
     // ==============================================
     
