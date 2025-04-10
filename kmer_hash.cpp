@@ -127,7 +127,7 @@ int main(int argc, char** argv) {
     std::vector<upcxx::future<>> futures;
 
     for (auto& kmer : kmers) {
-        futures.push_back(hashmap.insert(kmers));
+        futures.push_back(hashmap.insert(kmer));
 
         // std::cout << "kmer " << kmer.kmer_str() << std::endl;
 
