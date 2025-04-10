@@ -112,8 +112,8 @@ class DistributedHashMap {
         dist_hash_map local_map_g;
         HashMap* local_map;
     
-        int get_target_rank(const std::string &key) {
-            return std::hash<std::string>{}(key) % upcxx::rank_n();
+        int get_target_rank(const std::string &hash) {
+            return std::hash<std::string>{}(hash) % upcxx::rank_n();
         }
     
     public:
@@ -121,11 +121,6 @@ class DistributedHashMap {
             : local_map_g(upcxx::new_<HashMap>(local_size)) {
             // Only valid on the local rank!
             local_map = local_map_g->local();
-        }
-    
-        bool insert(const kmer_pair& kmer) {
-            // You'd want to implement logic here to send kmer to the right rank using RPC
-            return true;
         }
 
         bool request_slot(uint64_t slot) {
