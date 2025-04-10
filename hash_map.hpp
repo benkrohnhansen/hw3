@@ -39,7 +39,7 @@ HashMap::HashMap(size_t size) {
     used.resize(size, 0);
 }
 
-bool HashMap::insert(const kmer_pair& kmer) {
+bool HashMap::insert(const kmer_pair& kmer, std::vector<upcxx::global_ptr<HashMap>>& all_maps) {
     uint64_t hash = kmer.hash();
     uint64_t probe = 0;
 
@@ -58,11 +58,13 @@ bool HashMap::insert(const kmer_pair& kmer) {
         return success;
     }
     else {
-        std::cout << "Doing RPC\n";
+        // Remote insert via RPC
+        upcxx::global_ptr<HashMap> target_ptr = all_maps[owner_rank];
+
         bool success = upcxx::rpc(
             owner_rank,
             [](uint64_t hash, kmer_pair kmer, upcxx::global_ptr<HashMap> map_ptr) {
-                HashMap* local_map = map_ptr.local();
+                HashMap* local_map = map_ptr.local(); // This is now safe
                 uint64_t probe = 0;
                 while (probe < local_map->size()) {
                     uint64_t slot = (hash + probe++) % local_map->size();
@@ -73,9 +75,9 @@ bool HashMap::insert(const kmer_pair& kmer) {
                 }
                 return false;
             },
-            hash, kmer, self_ptr
+            hash, kmer, target_ptr
         ).wait();
-        std::cout << "Rank " << upcxx::rank_n() << " Success: " << success << std::endl;
+
         return success;
     }
 }

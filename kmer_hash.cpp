@@ -50,6 +50,14 @@ int main(int argc, char** argv) {
     size_t hash_table_size = n_kmers * (1.0 / 0.5);
     HashMap hashmap(hash_table_size);
 
+    std::vector<upcxx::global_ptr<HashMap>> all_maps(upcxx::rank_n());
+
+    all_maps[upcxx::rank_me()] = hashmap.self_ptr;
+
+    for (int i = 0; i < upcxx::rank_n(); i++) {
+        all_maps[i] = upcxx::broadcast(all_maps[i], i).wait();
+    }
+
     BUtil::print("Rank %i and table size %i\n", upcxx::rank_me(), hash_table_size);
 
     if (run_type == "verbose") {
@@ -70,7 +78,7 @@ int main(int argc, char** argv) {
     std::vector<kmer_pair> start_nodes;
 
     for (auto& kmer : kmers) {
-        bool success = hashmap.insert(kmer);
+        bool success = hashmap.insert(kmer, all_maps);
         if (!success) {
             BUtil::print("INSERT WAS NOT A SUCCESS\n");
             throw std::runtime_error("Error: HashMap is full!");
