@@ -128,6 +128,11 @@ int main(int argc, char** argv) {
         if (i > 10) break;
         i++;
     }
+
+    if (upcxx::rank_me() == 0) {
+        std::cout << "Contents\n " << hashmap.print_local() << std::endl;
+    }
+
     auto end_insert = std::chrono::high_resolution_clock::now();
     upcxx::barrier();
 
