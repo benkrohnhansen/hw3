@@ -83,25 +83,51 @@ bool HashMap::request_slot(uint64_t slot) {
 size_t HashMap::size() const noexcept { return my_size; }
 
 
+// class DistributedHashMap {
+//     private:
+//         upcxx::dist_object<upcxx::global_ptr<HashMap>> local_map_g;
+//         HashMap *local_map;
+        
+//         int get_target_rank(const std::string &key) {
+//             return std::hash<std::string>{}(key) % upcxx::rank_n();
+//         }
+//     public:
+//         DistributedHashMap(size_t local_size)
+//             : local_map_g(HashMap(local_size)) {
+//                 local_map = local_map_g->local();
+//             }
+
+//         bool insert(const kmer_pair& kmer) {
+//             return true;
+//         }
+
+//         size_t size() {
+//             return local_map->size();
+//         }
+// };
+
 class DistributedHashMap {
     private:
         upcxx::dist_object<upcxx::global_ptr<HashMap>> local_map_g;
-        HashMap *local_map;
-        
+        HashMap* local_map;
+    
         int get_target_rank(const std::string &key) {
             return std::hash<std::string>{}(key) % upcxx::rank_n();
         }
+    
     public:
         DistributedHashMap(size_t local_size)
-            : local_map_g(HashMap(local_size)) {
-                local_map = local_map_g->local();
-            }
-
+            : local_map_g(upcxx::new_<HashMap>(local_size)) {
+            // Only valid on the local rank!
+            local_map = local_map_g->local()->local();
+        }
+    
         bool insert(const kmer_pair& kmer) {
+            // You'd want to implement logic here to send kmer to the right rank using RPC
             return true;
         }
-
-        size_t size() {
+    
+        size_t size() const {
             return local_map->size();
         }
 };
