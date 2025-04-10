@@ -98,6 +98,12 @@ int main(int argc, char** argv) {
                      n_kmers);
     }
 
+    std::vector<kmer_pair> kmers = read_kmers(kmer_fname, upcxx::rank_n(), upcxx::rank_me());
+
+    if (run_type == "verbose") {
+        BUtil::print("Finished reading kmers.\n");
+    }
+
     upcxx::barrier();
 
     auto start = std::chrono::high_resolution_clock::now();
