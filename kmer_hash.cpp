@@ -126,20 +126,20 @@ int main(int argc, char** argv) {
     std::cout << "rank " << upcxx::rank_me() << "Rank start " << rank_start << " rank end " << rank_end << "\n";
     
     upcxx::barrier();
-    // std::vector<upcxx::future<>> futures;
+    std::vector<upcxx::future<>> futures;
 
     for (size_t i = rank_start; i < rank_end; i++) {
         auto& kmer = kmers[i];
-        // // futures.push_back(hashmap.insert(kmer));
+        futures.push_back(hashmap.insert(kmer));
 
-        std::cout << "kmer " << kmer.kmer_str() << std::endl;
+        // std::cout << "kmer " << kmer.kmer_str() << std::endl;
 
-        upcxx::future<> future = hashmap.insert(kmer);
+        // upcxx::future<> future = hashmap.insert(kmer);
 
         if (i > 20) break;
     }
 
-    // upcxx::when_all(futures.begin(), futures.end()).wait();
+    upcxx::when_all(futures.begin(), futures.end()).wait();
     // if (kmer.backwardExt() == 'F') {
     //     start_nodes.push_back(kmer);
     // }
