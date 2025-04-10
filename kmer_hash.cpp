@@ -128,10 +128,10 @@ int main(int argc, char** argv) {
     // std::vector<upcxx::future<>> futures;
 
     for (int i = rank_start; i < rank_end; i++) {
-        auto& kmer = kmers[i];
-        // futures.push_back(hashmap.insert(kmer));
+        // auto& kmer = kmers[i];
+        // // futures.push_back(hashmap.insert(kmer));
 
-        hashmap.insert(kmer);
+        // hashmap.insert(kmer);
 
         if (i > 10) break;
         i++;
