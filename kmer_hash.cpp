@@ -113,7 +113,7 @@ int main(int argc, char** argv) {
         std::list<kmer_pair> contig;
         contig.push_back(start_kmer);
         while (contig.back().forwardExt() != 'F') {
-            kmer_pair kmer = hashmap.find(contig.back().next_kmer())
+            kmer_pair kmer = hashmap.find(contig.back().next_kmer());
             // bool success = hashmap.find(contig.back().next_kmer(), kmer);
             // if (!success) {
             //     throw std::runtime_error("Error: k-mer not found in hashmap.");
