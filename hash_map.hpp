@@ -77,7 +77,7 @@ bool HashMap::request_slot(uint64_t slot) {
         return false;
     } else {
         used[slot] = 1;
-        std::cout << "Rank " << upcxx::rank_me() << " used " << i << " to 1\n"; 
+        std::cout << "Rank " << upcxx::rank_me() << " used " << slot << " to 1\n"; 
         return true;
     }
 }
