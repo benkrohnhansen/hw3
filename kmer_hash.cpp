@@ -88,26 +88,24 @@ int main(int argc, char** argv) {
     }
 
     size_t n_kmers = line_count(kmer_fname);
-
-    // Load factor of 0.5
-    size_t hash_table_size = n_kmers * (1.0 / 0.5);
-    size_t local_size = (hash_table_size / upcxx::rank_n());
-    if (hash_table_size % upcxx::rank_n() > upcxx::rank_me()) {
-        local_size++;
-    }
-    // DistributedHashMap hashmap(local_size);
-    DistributedHashMap hashmap(local_size);
-
+    
     if (run_type == "verbose") {
         BUtil::print("Initializing hash table of size %d for %d kmers.\n", hash_table_size,
-                     n_kmers);
-    }
+            n_kmers);
+        }
+        
+        std::vector<kmer_pair> kmers = read_kmers(kmer_fname, upcxx::rank_n(), upcxx::rank_me());
+        
+        if (run_type == "verbose") {
+            BUtil::print("Finished reading kmers.\n");
+        }
+    
+    // Load factor of 0.5
+    // size_t hash_table_size = n_kmers * (1.0 / 0.5);
+    size_t hash_table_size = kmers.size() * (1.0 / 0.5);
 
-    std::vector<kmer_pair> kmers = read_kmers(kmer_fname, upcxx::rank_n(), upcxx::rank_me());
-
-    if (run_type == "verbose") {
-        BUtil::print("Finished reading kmers.\n");
-    }
+    // DistributedHashMap hashmap(local_size);
+    DistributedHashMap hashmap(hash_table_size);
 
     upcxx::barrier();
 
@@ -119,18 +117,17 @@ int main(int argc, char** argv) {
         std::cout << "Size " << hashmap.size() << std::endl;
     }
 
-    size_t rank_start = upcxx::rank_me() * (hash_table_size / upcxx::rank_n()) 
-                     + hash_table_size % upcxx::rank_n();
-    size_t rank_end = rank_start + local_size;
+    // size_t rank_start = upcxx::rank_me() * (hash_table_size / upcxx::rank_n()) 
+    //                  + hash_table_size % upcxx::rank_n();
+    // size_t rank_end = rank_start + local_size;
 
-    std::cout << "rank " << upcxx::rank_me() << "Rank start " << rank_start << " rank end " << rank_end << "\n";
+    // std::cout << "rank " << upcxx::rank_me() << "Rank start " << rank_start << " rank end " << rank_end << "\n";
     
     upcxx::barrier();
     std::vector<upcxx::future<>> futures;
 
-    for (size_t i = rank_start; i < rank_end; i++) {
-        auto kmer = kmers[i];
-        futures.push_back(hashmap.insert(kmers[i]));
+    for (auto& kmer : kmers) {
+        futures.push_back(hashmap.insert(kmers));
 
         // std::cout << "kmer " << kmer.kmer_str() << std::endl;
 
