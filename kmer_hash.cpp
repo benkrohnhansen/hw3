@@ -114,6 +114,7 @@ int main(int argc, char** argv) {
         std::cout << "Size " << hashmap.size() << std::endl;
     }
 
+    int i == 0;
     for (auto& kmer : kmers) {
         upcxx::future<> success = hashmap.insert(kmer);
         // if (!success) {
@@ -123,6 +124,9 @@ int main(int argc, char** argv) {
         // if (kmer.backwardExt() == 'F') {
         //     start_nodes.push_back(kmer);
         // }
+        std::cout << "Rank " << upc::xx << " sending " << kmer.kmer_str() << std::endl;
+        if (i > 10) break;
+        i++;
     }
     auto end_insert = std::chrono::high_resolution_clock::now();
     upcxx::barrier();
