@@ -102,7 +102,7 @@ class DistributedHashMap {
         }
 
         size_t size() {
-            return local_map.size();
+            return local_map->size();
         }
 };
 
