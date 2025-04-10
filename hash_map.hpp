@@ -85,7 +85,8 @@ size_t HashMap::size() const noexcept { return my_size; }
 
 class DistributedHashMap {
     private:
-        upcxx::dist_object<HashMap> local_map;
+        upcxx::dist_object<HashMap> local_map_g;
+        double *local_map = local_map_g->local();
         
         int get_target_rank(const std::string &key) {
             return std::hash<std::string>{}(key) % upcxx::rank_n();
@@ -96,6 +97,10 @@ class DistributedHashMap {
 
         bool insert(const kmer_pair& kmer) {
             return true;
+        }
+
+        size_t size() {
+            return local_map.size();
         }
 };
 
