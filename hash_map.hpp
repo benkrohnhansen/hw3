@@ -5,7 +5,7 @@
 #include <iostream>
 
 struct HashMap {    
-    upcxx::global_ptr<HashMap> self_ptr;
+    // upcxx::global_ptr<HashMap> self_ptr;
 
     std::vector<kmer_pair> data;
     std::vector<int> used;

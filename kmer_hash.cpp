@@ -48,15 +48,20 @@ int main(int argc, char** argv) {
 
     // Load factor of 0.5
     size_t hash_table_size = n_kmers * (1.0 / 0.5);
-    HashMap hashmap(hash_table_size);
+    // HashMap hashmap(hash_table_size);
+
+    // Refactor to be correct size later
+    upcxx::global_ptr<HashMap> hashmap = upcxx::new_<HashMap>(hash_table_size);
 
     std::vector<upcxx::global_ptr<HashMap>> all_maps(upcxx::rank_n());
 
     all_maps[upcxx::rank_me()] = hashmap.self_ptr;
 
     for (int i = 0; i < all_maps.size(); ++i) {
-        BUtil::print("Rank", upcxx::rank_me(), "sees all_maps[", i, "] =", all_maps[i]);
+        BUtil::print("Rank %i sees all maps [%i]=%i", upcxx::rank_me(), i, all_maps[i]);
     }
+
+    upcxx::barrier();
 
     BUtil::print("Rank %i and table size %i\n", upcxx::rank_me(), hash_table_size);
 
