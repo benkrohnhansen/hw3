@@ -92,7 +92,7 @@ int main(int argc, char** argv) {
     // Load factor of 0.5
     size_t hash_table_size = n_kmers * (1.0 / 0.5);
     size_t local_size = (hash_table_size / upcxx::rank_n());
-    if (hash_table_size % upcxx::rank_n() > upcxx::rank_me) {
+    if (hash_table_size % upcxx::rank_n() > upcxx::rank_me()) {
         local_size++;
     }
     DistributedHashMap hashmap(local_size);
@@ -127,7 +127,6 @@ int main(int argc, char** argv) {
     for (int i = rank_start; i < rank_end; i++) {
         futures.push_back(hashmap.insert(kmers[i]));
 
-        std::cout << "Rank " << upcxx::rank_me() << " sending " << kmer.kmer_str() << std::endl;
         if (i > 10) break;
         i++;
     }
