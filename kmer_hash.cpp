@@ -136,9 +136,9 @@ int main(int argc, char** argv) {
     }
 
     upcxx::when_all(futures.begin(), futures.end()).wait();
-    if (kmer.backwardExt() == 'F') {
-        start_nodes.push_back(kmer);
-    }
+    // if (kmer.backwardExt() == 'F') {
+    //     start_nodes.push_back(kmer);
+    // }
 
     upcxx::barrier();
     
