@@ -129,12 +129,18 @@ int main(int argc, char** argv) {
         i++;
     }
 
+    upcxx::barrier();
+
     if (upcxx::rank_me() == 0) {
         hashmap.print_local();
     }
 
     auto end_insert = std::chrono::high_resolution_clock::now();
     upcxx::barrier();
+
+    if (upcxx::rank_me() == 1) {
+        hashmap.print_local();
+    }
 
     // ==============================================
     

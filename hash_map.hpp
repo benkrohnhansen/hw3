@@ -45,6 +45,7 @@ bool HashMap::insert(const kmer_pair& kmer) {
         std::cout << "Rank " << upcxx::rank_me() << " insert success: " << success << std::endl;
         if (success) {
             write_slot(slot, kmer);
+            std::cout 
         }
     } while (!success && probe < size());
     return success;
