@@ -120,7 +120,7 @@ class DistributedHashMap {
                 if (true) {
                     // std::cout << "USED " << local_map->slot_used(i) << std::endl;
                     const kmer_pair& kp = local_map->read_slot(i);
-                    if (kp.kmer_str != "AAAAAAAAAAAAAAAAAAA"){
+                    if (kp.kmer_str() != "AAAAAAAAAAAAAAAAAAA"){
                     std::cout << "  Slot " << i << ": kmer = " << kp.kmer_str() << std::endl;
                     }
                 }
