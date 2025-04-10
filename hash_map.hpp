@@ -16,8 +16,8 @@ struct HashMap {
     // Most important functions: insert and retrieve
     // k-mers from the hash table.
     bool insert(const kmer_pair& kmer);
-    bool find(const pkmer_t& key_kmer, kmer_pair& val_kmer);
-
+    // bool find(const pkmer_t& key_kmer, kmer_pair& val_kmer);
+    kmer_pair find(const pkmer_t& key_kmer);
     // Helper functions
 
     // Write and read to a logical data slot in the table.
@@ -50,9 +50,11 @@ bool HashMap::insert(const kmer_pair& kmer) {
     return success;
 }
 
-bool HashMap::find(const pkmer_t& key_kmer, kmer_pair& val_kmer) {
+// bool HashMap::find(const pkmer_t& key_kmer, kmer_pair& val_kmer) {
+kmer_pair HashMap::find(const pkmer_t& key_kmer) {
     uint64_t hash = key_kmer.hash();
     uint64_t probe = 0;
+    kmer_pair val_kmer;
     bool success = false;
     do {
         uint64_t slot = (hash + probe++) % size();
@@ -63,7 +65,8 @@ bool HashMap::find(const pkmer_t& key_kmer, kmer_pair& val_kmer) {
             }
         }
     } while (!success && probe < size());
-    return success;
+    // return success;
+    return val_kmer;
 }
 
 bool HashMap::slot_used(uint64_t slot) { return used[slot] != 0; }
@@ -113,6 +116,18 @@ class DistributedHashMap {
                 local->insert(kmer);
                 }, local_map_g, kmer);
         }   
+
+        // upcxx::future<kmer_pair> find(const pkmer_t& key_kmer, kmer_pair& val_kmer) {
+        upcxx::future<kmer_pair> find(const pkmer_t& key_kmer) {
+            uint64_t hash = key_kmer.hash();
+            return upcxx::rpc(get_target_rank(hash),
+                // lambda to find the hash in the local map
+                [](dist_hash_map &lmap, const pkmer_t& key_kmer) -> kmer_pair {
+                HashMap* local = lmap->local();
+                return local->find(key_kmer);
+                // if (val_kmer == lmap->end()) return kmer_pair; // not found
+                }, local_map_g, key_kmer);
+        }
     
         size_t size() const {
             return local_map->size();
@@ -129,8 +144,7 @@ class DistributedHashMap {
                     }
                 }
             }
-        }
-        
+        }   
 };
 
 
