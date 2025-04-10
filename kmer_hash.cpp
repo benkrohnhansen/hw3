@@ -127,7 +127,6 @@ int main(int argc, char** argv) {
     
     upcxx::barrier();
     std::vector<upcxx::future<>> futures;
-    std::vector<kmer_pair> start_nodes;
 
     for (size_t i = rank_start; i < rank_end; i++) {
         auto& kmer = kmers[i];
