@@ -142,6 +142,7 @@ class DistributedHashMap {
             std::cout << "Rank " << upcxx::rank_me() << " local map contents:\n";
             for (size_t i = 0; i < local_map->size(); ++i) {
                 if (local_map->slot_used(i)) {
+                    std::cout << "USED " << local_map->slot_used(i) << std::endl;
                     const kmer_pair& kp = local_map->read_slot(i);
                     std::cout << "  Slot " << i << ": kmer = " << kp.kmer_str();
                 }
