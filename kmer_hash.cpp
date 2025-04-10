@@ -123,6 +123,15 @@ int main(int argc, char** argv) {
         contigs.push_back(contig);
     }
 
+    if (upcxx::rank_me() == 0) {
+        const auto& first_contig = contigs.front();
+        int count = 0;
+        for (const auto& kmer : first_contig) {
+            std::cout << "kmer " << count << ": " << kmer.kmer_str << " " << kmer.backwardExt << kmer.forwardExt << std::endl;
+            if (++count >= 10) break;
+        }
+    }
+
     auto end_read = std::chrono::high_resolution_clock::now();
     upcxx::barrier();
     auto end = std::chrono::high_resolution_clock::now();
