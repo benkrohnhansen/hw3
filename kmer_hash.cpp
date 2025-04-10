@@ -97,7 +97,7 @@ int main(int argc, char** argv) {
         ).wait();
     
         BUtil::print("Rank 0 retrieved from rank 1: %s, f=%c, b=%c\n",
-            received.kmer_str, received.forwardExt, received.backwardExt);
+            received.kmer_str(), received.forwardExt(), received.backwardExt());
     }
 
     upcxx::barrier();
