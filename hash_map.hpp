@@ -82,30 +82,6 @@ bool HashMap::request_slot(uint64_t slot) {
 
 size_t HashMap::size() const noexcept { return my_size; }
 
-
-// class DistributedHashMap {
-//     private:
-//         upcxx::dist_object<upcxx::global_ptr<HashMap>> local_map_g;
-//         HashMap *local_map;
-        
-//         int get_target_rank(const std::string &key) {
-//             return std::hash<std::string>{}(key) % upcxx::rank_n();
-//         }
-//     public:
-//         DistributedHashMap(size_t local_size)
-//             : local_map_g(HashMap(local_size)) {
-//                 local_map = local_map_g->local();
-//             }
-
-//         bool insert(const kmer_pair& kmer) {
-//             return true;
-//         }
-
-//         size_t size() {
-//             return local_map->size();
-//         }
-// };
-
 class DistributedHashMap {
     private:
         using dist_hash_map = upcxx::dist_object<upcxx::global_ptr<HashMap>>;
@@ -144,7 +120,9 @@ class DistributedHashMap {
                 if (true) {
                     // std::cout << "USED " << local_map->slot_used(i) << std::endl;
                     const kmer_pair& kp = local_map->read_slot(i);
-                    std::cout << "  Slot " << i << ": kmer = " << kp.kmer_str();
+                    if (kp.kmer_str != "AAAAAAAAAAAAAAAAAAA"){
+                    std::cout << "  Slot " << i << ": kmer = " << kp.kmer_str() << std::endl;
+                    }
                 }
             }
         }
