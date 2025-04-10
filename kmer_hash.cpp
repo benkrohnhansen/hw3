@@ -124,12 +124,15 @@ int main(int argc, char** argv) {
     size_t rank_end = rank_start + local_size;
 
     std::cout << "rank " << upcxx::rank_me() << "Rank start " << rank_start << " rank end " << rank_end;
-
+    
+    upcxx::barrier();
     // std::vector<upcxx::future<>> futures;
 
     for (size_t i = rank_start; i < rank_end; i++) {
         auto& kmer = kmers[i];
         // // futures.push_back(hashmap.insert(kmer));
+
+        std::cout << "kmer " << kmer.kmer_str() << std::endl;
 
         hashmap.insert(kmer);
 
