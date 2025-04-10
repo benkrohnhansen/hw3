@@ -115,14 +115,14 @@ int main(int argc, char** argv) {
     }
 
     for (auto& kmer : kmers) {
-        bool success = hashmap.insert(kmer);
-        if (!success) {
-            throw std::runtime_error("Error: HashMap is full!");
-        }
+        upcxx::future<> success = hashmap.insert(kmer);
+        // if (!success) {
+        //     throw std::runtime_error("Error: HashMap is full!");
+        // }
 
-        if (kmer.backwardExt() == 'F') {
-            start_nodes.push_back(kmer);
-        }
+        // if (kmer.backwardExt() == 'F') {
+        //     start_nodes.push_back(kmer);
+        // }
     }
     auto end_insert = std::chrono::high_resolution_clock::now();
     upcxx::barrier();
