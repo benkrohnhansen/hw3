@@ -51,11 +51,12 @@ int main(int argc, char** argv) {
     // HashMap hashmap(hash_table_size);
 
     // Refactor to be correct size later
-    upcxx::global_ptr<HashMap> hashmap = upcxx::new_<HashMap>(hash_table_size);
+    upcxx::global_ptr<HashMap> hashmap_ptr = upcxx::new_<HashMap>(hash_table_size);
+    HashMap& hashmap = *hashmap_ptr.local();
 
     std::vector<upcxx::global_ptr<HashMap>> all_maps(upcxx::rank_n());
 
-    all_maps[upcxx::rank_me()] = hashmap.self_ptr;
+    all_maps[upcxx::rank_me()] = hashmap_ptr;
 
     for (int i = 0; i < all_maps.size(); ++i) {
         BUtil::print("Rank %i sees all maps [%i]=%i", upcxx::rank_me(), i, all_maps[i]);
