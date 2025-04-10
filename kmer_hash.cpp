@@ -50,137 +50,53 @@ int main(int argc, char** argv) {
 
     // Load factor of 0.5
     size_t hash_table_size = n_kmers * (1.0 / 0.5);
-    // HashMap hashmap(hash_table_size);
+    HashMap hashmap(hash_table_size);
 
-    // Refactor to be correct size later
-    upcxx::global_ptr<HashMap> hashmap_ptr = upcxx::new_<HashMap>(hash_table_size);
-    HashMap& hashmap = *hashmap_ptr.local();
-
-    std::vector<upcxx::global_ptr<HashMap>> all_maps(upcxx::rank_n());
-
-    all_maps[upcxx::rank_me()] = hashmap_ptr;
-
-    for (int i = 0; i < all_maps.size(); ++i) {
-        BUtil::print("Rank %i sees all maps [%i]=%d\n", upcxx::rank_me(), i, all_maps[i]);
-    }
-    
-    // BUtil::print("Rank %i and table size %i\n", upcxx::rank_me(), hash_table_size);
-    
     if (run_type == "verbose") {
         BUtil::print("Initializing hash table of size %d for %d kmers.\n", hash_table_size,
-            n_kmers);
-        }
-        
-    std::vector<kmer_pair> kmers = read_kmers(kmer_fname, upcxx::rank_n(), upcxx::rank_me());
-
-    // ========================================================
-    if (upcxx::rank_me() == 1) {
-        kmer_pair test_kmer = kmers[0];
-        // Write it to slot 42
-        uint64_t slot = 42;
-        bool success = hashmap.request_slot(slot);
-        if (success) {
-            hashmap.write_slot(slot, test_kmer);
-        }
-        std::cout << "Rank 1 wrote test_kmer to slot 42\n";
+                     n_kmers);
     }
 
-    upcxx::barrier();
-
-    if (upcxx::rank_me() == 0) {
-        kmer_pair received = upcxx::rpc(
-            1,
-            [](upcxx::global_ptr<HashMap> ptr, int slot) -> kmer_pair {
-                return ptr.local()->read_slot(slot);
-            },
-            hashmap_ptr, 42
-        ).wait();
+    // ==============================================
     
-        BUtil::print("Rank 0 retrieved from rank 1: %s, f=%c, b=%c\n",
-            received.kmer_str(), received.forwardExt(), received.backwardExt());
+    int rank = upcxx::rank_me();
+    int n_ranks = upcxx::rank_n();
+
+    // Each rank holds an integer in a dist_object
+    upcxx::dist_object<int> dist_val(rank);
+
+    // Ensure all ranks initialized their dist_object
+    upcxx::barrier();
+
+    // Rank 0 will do the following:
+    // - rget value from rank 1 (if it exists)
+    // - rput value to rank 1 (if it exists)
+    // - rpc to rank 1 (if it exists)
+    if (rank == 0 && n_ranks > 1) {
+        // rget from rank 1
+        upcxx::future<int> fut_val = upcxx::rget(dist_val.fetch(1));
+        int val = fut_val.wait();
+
+        std::cout << "Rank 0: rget from rank 1 got value = " << val << std::endl;
+
+        // rput to rank 1 (send value 42)
+        upcxx::rput(42, dist_val.fetch(1)).wait();
+
+        std::cout << "Rank 0: rput 42 to rank 1" << std::endl;
+
+        // rpc to rank 1
+        upcxx::rpc(1, []() {
+            std::cout << "Rank 1 (via rpc): Hello from rank 1!" << std::endl;
+        }).wait();
     }
 
     upcxx::barrier();
 
-    // ========================================================
-
-    if (run_type == "verbose") {
-        BUtil::print("Finished reading kmers.\n");
+    // Final output from rank 0 to confirm execution
+    if (rank == 0) {
+        std::cout << "Rank 0: Finished UPC++ demo." << std::endl;
     }
-
-    upcxx::barrier();
-
-    auto start = std::chrono::high_resolution_clock::now();
-
-    std::vector<kmer_pair> start_nodes;
-
-    for (auto& kmer : kmers) {
-        bool success = hashmap.insert(kmer, all_maps);
-        if (!success) {
-            BUtil::print("INSERT WAS NOT A SUCCESS\n");
-            throw std::runtime_error("Error: HashMap is full!");
-        }
-
-        if (kmer.backwardExt() == 'F') {
-            start_nodes.push_back(kmer);
-        }
-    }
-    auto end_insert = std::chrono::high_resolution_clock::now();
-    upcxx::barrier();
-
-    double insert_time = std::chrono::duration<double>(end_insert - start).count();
-    if (run_type != "test") {
-        BUtil::print("Finished inserting in %lf\n", insert_time);
-    }
-    upcxx::barrier();
-
-    auto start_read = std::chrono::high_resolution_clock::now();
-
-    std::list<std::list<kmer_pair>> contigs;
-    for (const auto& start_kmer : start_nodes) {
-        std::list<kmer_pair> contig;
-        contig.push_back(start_kmer);
-        while (contig.back().forwardExt() != 'F') {
-            kmer_pair kmer;
-            bool success = hashmap.find(contig.back().next_kmer(), kmer);
-            if (!success) {
-                throw std::runtime_error("Error: k-mer not found in hashmap.");
-            }
-            contig.push_back(kmer);
-        }
-        contigs.push_back(contig);
-    }
-
-    auto end_read = std::chrono::high_resolution_clock::now();
-    upcxx::barrier();
-    auto end = std::chrono::high_resolution_clock::now();
-
-    std::chrono::duration<double> read = end_read - start_read;
-    std::chrono::duration<double> insert = end_insert - start;
-    std::chrono::duration<double> total = end - start;
-
-    int numKmers = std::accumulate(
-        contigs.begin(), contigs.end(), 0,
-        [](int sum, const std::list<kmer_pair>& contig) { return sum + contig.size(); });
-
-    if (run_type != "test") {
-        BUtil::print("Assembled in %lf total\n", total.count());
-    }
-
-    if (run_type == "verbose") {
-        printf("Rank %d reconstructed %d contigs with %d nodes from %d start nodes."
-               " (%lf read, %lf insert, %lf total)\n",
-               upcxx::rank_me(), contigs.size(), numKmers, start_nodes.size(), read.count(),
-               insert.count(), total.count());
-    }
-
-    if (run_type == "test") {
-        std::ofstream fout(test_prefix + "_" + std::to_string(upcxx::rank_me()) + ".dat");
-        for (const auto& contig : contigs) {
-            fout << extract_contig(contig) << std::endl;
-        }
-        fout.close();
-    }
+    // ==============================================
 
     upcxx::finalize();
     return 0;
