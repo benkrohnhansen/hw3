@@ -119,7 +119,7 @@ class DistributedHashMap {
         DistributedHashMap(size_t local_size)
             : local_map_g(upcxx::new_<HashMap>(local_size)) {
             // Only valid on the local rank!
-            local_map = local_map_g->local()->local();
+            local_map = local_map_g->local();
         }
     
         bool insert(const kmer_pair& kmer) {
