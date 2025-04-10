@@ -112,8 +112,8 @@ class DistributedHashMap {
         dist_hash_map local_map_g;
         HashMap* local_map;
     
-        int get_target_rank(const std::string &hash) {
-            return std::hash<std::string>{}(hash) % upcxx::rank_n();
+        int get_target_rank(const uint64_t &hash) {
+            return hash % upcxx::rank_n();
         }
     
     public:
