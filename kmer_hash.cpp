@@ -127,7 +127,7 @@ int main(int argc, char** argv) {
         const auto& first_contig = contigs.front();
         int count = 0;
         for (const auto& kmer : first_contig) {
-            std::cout << "kmer " << count << ": " << kmer.kmer_str << " " << kmer.backwardExt << kmer.forwardExt << std::endl;
+            std::cout << "kmer " << count << ": " << kmer.kmer_str() << " " << kmer.backwardExt() << kmer.forwardExt << std::endl;
             if (++count >= 10) break;
         }
     }
