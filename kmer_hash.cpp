@@ -138,6 +138,8 @@ int main(int argc, char** argv) {
         hashmap.print_local();
     }
 
+    upcxx::barrier();
+
     if (upcxx::rank_me() == 1) {
         hashmap.print_local();
     }
