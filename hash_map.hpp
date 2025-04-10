@@ -98,6 +98,7 @@ bool HashMap::find(const pkmer_t& key_kmer, kmer_pair& val_kmer) {
         } while (!success && probe < size());
         return success;
     } 
+    return false;
 }
 
 

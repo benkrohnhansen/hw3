@@ -78,7 +78,7 @@ int main(int argc, char** argv) {
     std::vector<kmer_pair> start_nodes;
 
     for (auto& kmer : kmers) {
-        bool success = hashmap.insert(kmer);
+        bool success = hashmap.insert(kmer, all_maps);
         if (!success) {
             BUtil::print("INSERT WAS NOT A SUCCESS\n");
             throw std::runtime_error("Error: HashMap is full!");
