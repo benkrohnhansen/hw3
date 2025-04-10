@@ -33,7 +33,7 @@ struct HashMap {
 };
 
 HashMap::HashMap(size_t size) {
-    self_ptr = upcxx::new_<HashMap>(*this);
+    // self_ptr = upcxx::new_<HashMap>(*this);
     my_size = size;
     data.resize(size);
     used.resize(size, 0);
