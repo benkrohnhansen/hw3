@@ -130,7 +130,7 @@ int main(int argc, char** argv) {
     }
 
     if (upcxx::rank_me() == 0) {
-        std::cout << "Contents\n " << hashmap.print_local() << std::endl;
+        hashmap.print_local();
     }
 
     auto end_insert = std::chrono::high_resolution_clock::now();
