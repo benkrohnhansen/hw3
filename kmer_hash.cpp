@@ -127,6 +127,7 @@ int main(int argc, char** argv) {
     
     upcxx::barrier();
     std::vector<upcxx::future<>> futures;
+    std::vector<kmer_pair> start_nodes;
 
     for (size_t i = rank_start; i < rank_end; i++) {
         auto& kmer = kmers[i];
@@ -134,9 +135,10 @@ int main(int argc, char** argv) {
 
         // std::cout << "kmer " << kmer.kmer_str() << std::endl;
 
-        // upcxx::future<> future = hashmap.insert(kmer);
-
-        if (i > 20) break;
+        if (kmer.backwardExt() == 'F') {
+            start_nodes.push_back(kmer);
+        }
+        // if (i > 20) break;
     }
 
     upcxx::when_all(futures.begin(), futures.end()).wait();
@@ -148,16 +150,22 @@ int main(int argc, char** argv) {
     
     auto end_insert = std::chrono::high_resolution_clock::now();
     upcxx::barrier();
+
+    for (auto& start_node : start_nodes) {
+        std::cout << "rank " << upcxx::rank_me() << " start node " << start_node.kmer_str() << std::endl;
+        std::cout << start_node.backwardExt() << std::endl; 
+    }
     
-    upcxx::barrier();
     
     // if (upcxx::rank_me() == 1) {
+    //         hashmap.print_local();
+    //     }
+    
+    // upcxx::barrier();
+        
+    // if (upcxx::rank_me() == 0) {
     //     hashmap.print_local();
     // }
-    
-    if (upcxx::rank_me() == 0) {
-        hashmap.print_local();
-    }
 
     // ==============================================
     
