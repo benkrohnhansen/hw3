@@ -110,6 +110,10 @@ int main(int argc, char** argv) {
 
     std::vector<kmer_pair> start_nodes;
 
+    if (upcxx::rank_me() == 0) {
+        std::cout << "Size " << hashmap.size() << std::endl;
+    }
+
     for (auto& kmer : kmers) {
         bool success = hashmap.insert(kmer);
         if (!success) {
