@@ -89,16 +89,16 @@ int main(int argc, char** argv) {
 
     size_t n_kmers = line_count(kmer_fname);
     
+    // if (run_type == "verbose") {
+    //     BUtil::print("Initializing hash table of size %d for %d kmers.\n", hash_table_size,
+    //         n_kmers);
+    //     }
+        
+    std::vector<kmer_pair> kmers = read_kmers(kmer_fname, upcxx::rank_n(), upcxx::rank_me());
+    
     if (run_type == "verbose") {
-        BUtil::print("Initializing hash table of size %d for %d kmers.\n", hash_table_size,
-            n_kmers);
-        }
-        
-        std::vector<kmer_pair> kmers = read_kmers(kmer_fname, upcxx::rank_n(), upcxx::rank_me());
-        
-        if (run_type == "verbose") {
-            BUtil::print("Finished reading kmers.\n");
-        }
+        BUtil::print("Finished reading kmers.\n");
+    }
     
     // Load factor of 0.5
     // size_t hash_table_size = n_kmers * (1.0 / 0.5);
