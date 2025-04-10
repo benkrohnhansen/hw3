@@ -151,13 +151,13 @@ int main(int argc, char** argv) {
     
     upcxx::barrier();
     
-    if (upcxx::rank_me() == 1) {
-        hashmap.print_local();
-    }
-    
-    // if (upcxx::rank_me() == 0) {
+    // if (upcxx::rank_me() == 1) {
     //     hashmap.print_local();
     // }
+    
+    if (upcxx::rank_me() == 0) {
+        hashmap.print_local();
+    }
 
     // ==============================================
     
