@@ -123,7 +123,7 @@ int main(int argc, char** argv) {
                      + hash_table_size % upcxx::rank_n();
     int rank_end = rank_start + local_size;
 
-    std::cout << "rank " << upcxx::rank_me() << "Rank start " << rank_start << " rank end " << rank_end
+    std::cout << "rank " << upcxx::rank_me() << "Rank start " << rank_start << " rank end " << rank_end;
 
     std::vector<upcxx::future<>> futures;
 
