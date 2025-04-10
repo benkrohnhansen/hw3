@@ -78,9 +78,9 @@ int main(int argc, char** argv) {
         kmer_pair test_kmer = kmers[0];
         // Write it to slot 42
         uint64_t slot = 42;
-        bool success = request_slot(slot);
+        bool success = hashmap.request_slot(slot);
         if (success) {
-            write_slot(slot, test_kmer);
+            hashmap.write_slot(slot, test_kmer);
         }
         std::cout << "Rank 1 wrote test_kmer to slot 42\n";
     }
