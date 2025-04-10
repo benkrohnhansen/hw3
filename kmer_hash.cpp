@@ -67,17 +67,24 @@ int main(int argc, char** argv) {
 
     if (upcxx::rank_me() == 0){
         std::cout << "X0 " << x << std::endl;
+        std::cout << "X0 " << *x << std::endl;
     }
 
     if (upcxx::rank_me() == 1){
         std::cout << "X1 " << x << std::endl;
+        std::cout << "X1 " << *x << std::endl;
     }
 
     upcxx::delete_(x);
+    
+    upcxx::global_ptr<int> x_arr = upcxx::new_array<int>(10);
+    UPCXX_ASSERT(x_arr.is_local());   // a precondition of global_ptr<T>::local()
+    int *local_ptr = x_arr.local();
+    local_ptr[1] = 4;
 
-    // upcxx::global_ptr<int> x_arr = upcxx::new_array<int>(10);
-
-    // upcxx::delete_array(x_arr);
+    if (upcxx::rank_me() == 0){
+        std::cout << "Xarr1 " << local_ptr[1] << std::endl;
+    }
 
     // ==============================================
     upcxx::finalize();
