@@ -123,10 +123,6 @@ class DistributedHashMap {
             local_map = local_map_g->local();
         }
 
-        bool request_slot(uint64_t slot) {
-            return local_map->request_slot();
-        }
-
         upcxx::future<> insert(const kmer_pair& kmer) {
         uint64_t hash = kmer.hash();
         return upcxx::rpc(get_target_rank(hash),
