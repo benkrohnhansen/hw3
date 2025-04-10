@@ -5,6 +5,8 @@
 #include <iostream>
 
 struct HashMap {    
+    upcxx::global_ptr<HashMap> self_ptr;
+
     std::vector<kmer_pair> data;
     std::vector<int> used;
 
@@ -31,6 +33,7 @@ struct HashMap {
 };
 
 HashMap::HashMap(size_t size) {
+    self_ptr = upcxx::new_<HashMap>(*this);
     my_size = size;
     data.resize(size);
     used.resize(size, 0);
