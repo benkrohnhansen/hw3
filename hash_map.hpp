@@ -143,8 +143,7 @@ class DistributedHashMap {
             for (size_t i = 0; i < local_map->size(); ++i) {
                 if (local_map->slot_used(i)) {
                     const kmer_pair& kp = local_map->read_slot(i);
-                    std::cout << "  Slot " << i << ": key = " << kp.kmer
-                              << ", value = " << kp.value << "\n";
+                    std::cout << "  Slot " << i << ": kmer = " << kp.kmer_str();
                 }
             }
         }
