@@ -119,19 +119,19 @@ int main(int argc, char** argv) {
         std::cout << "Size " << hashmap.size() << std::endl;
     }
 
-    int rank_start = upcxx::rank_me() * (hash_table_size / upcxx::rank_n()) 
+    size_t rank_start = upcxx::rank_me() * (hash_table_size / upcxx::rank_n()) 
                      + hash_table_size % upcxx::rank_n();
-    int rank_end = rank_start + local_size;
+    size_t rank_end = rank_start + local_size;
 
     std::cout << "rank " << upcxx::rank_me() << "Rank start " << rank_start << " rank end " << rank_end;
 
     // std::vector<upcxx::future<>> futures;
 
-    for (int i = rank_start; i < rank_end; i++) {
-        // auto& kmer = kmers[i];
+    for (size_t i = rank_start; i < rank_end; i++) {
+        auto& kmer = kmers[i];
         // // futures.push_back(hashmap.insert(kmer));
 
-        // hashmap.insert(kmer);
+        hashmap.insert(kmer);
 
         if (i > 10) break;
         i++;
