@@ -7,6 +7,7 @@
 #include <set>
 #include <upcxx/upcxx.hpp>
 #include <vector>
+#include <unordered_map>
 
 #include "hash_map.hpp"
 #include "kmer_t.hpp"
@@ -14,15 +15,13 @@
 
 #include "butil.hpp"
 
+#include <iostream>
+
+using namespace std;
+
+
 int main(int argc, char** argv) {
     upcxx::init();
-
-    // TODO: Dear Students,
-    // Please remove this if statement, when you start writing your parallel implementation.
-    if (upcxx::rank_n() > 1) {
-        throw std::runtime_error("Error: parallel implementation not started yet!"
-                                 " (remove this when you start working.)");
-    }
 
     if (argc < 2) {
         BUtil::print("usage: srun -N nodes -n ranks ./kmer_hash kmer_file [verbose|test [prefix]]\n");
@@ -31,7 +30,8 @@ int main(int argc, char** argv) {
     }
 
     std::string kmer_fname = std::string(argv[1]);
-    std::string run_type = "";
+    // std::string run_type = "";
+    std::string run_type = "verbose";
 
     if (argc >= 3) {
         run_type = std::string(argv[2]);
@@ -52,20 +52,23 @@ int main(int argc, char** argv) {
     }
 
     size_t n_kmers = line_count(kmer_fname);
-
+        
+    std::vector<kmer_pair> kmers = read_kmers(kmer_fname, upcxx::rank_n(), upcxx::rank_me());
+    
+    if (run_type == "verbose") {
+        BUtil::print("Finished reading kmers.\n");
+    }
+    
     // Load factor of 0.5
-    size_t hash_table_size = n_kmers * (1.0 / 0.5);
-    HashMap hashmap(hash_table_size);
+    // size_t hash_table_size = n_kmers * (1.0 / 0.5);
+    size_t hash_table_size = kmers.size() * (1.0 / 0.5);
+
+    // DistributedHashMap hashmap(local_size);
+    DistributedHashMap hashmap(hash_table_size);
 
     if (run_type == "verbose") {
         BUtil::print("Initializing hash table of size %d for %d kmers.\n", hash_table_size,
                      n_kmers);
-    }
-
-    std::vector<kmer_pair> kmers = read_kmers(kmer_fname, upcxx::rank_n(), upcxx::rank_me());
-
-    if (run_type == "verbose") {
-        BUtil::print("Finished reading kmers.\n");
     }
 
     upcxx::barrier();
@@ -74,16 +77,44 @@ int main(int argc, char** argv) {
 
     std::vector<kmer_pair> start_nodes;
 
+    upcxx::barrier();
+    
+    // 여기 바꾸고 있음
+    
+    std::unordered_map<int, std::vector<kmer_pair>> send_buffers; // Local storage
+
     for (auto& kmer : kmers) {
-        bool success = hashmap.insert(kmer);
-        if (!success) {
-            throw std::runtime_error("Error: HashMap is full!");
-        }
+        int target = kmer.hash() % upcxx::rank_n(); // find a owner rank for each kmer
+        send_buffers[target].push_back(kmer); // buffer gathers kmers by using owner rank index
 
         if (kmer.backwardExt() == 'F') {
             start_nodes.push_back(kmer);
+            // std::cout << "rank " << upcxx::rank_me() << " kmer " << kmer.kmer_str() << " " << kmer.backwardExt() << std::endl;
         }
     }
+
+    std::vector<upcxx::future<>> futures;
+
+    
+    for (auto& [rank, batch] : send_buffers){ // get k-mer list
+        if (rank == upcxx::rank_me()){ // if it's my rank, use insert (no rpc)
+            for (auto& kmer : batch){
+                hashmap.local_insert(kmer);
+            }
+        } else { // if it's not my rank, send multiple k-mer with one rpc   
+            futures.push_back(
+                upcxx::rpc(rank,
+                    [](DistributedHashMap::dist_hash_map& lmap, const std::vector<kmer_pair>& batch){
+                        HashMap* local = lmap->local();
+                        for (const auto&k : batch)
+                            local->insert(k);
+                  }, hashmap.get_dist_map(), batch)
+            );
+        }
+    }
+
+    upcxx::when_all(futures.begin(), futures.end()).wait();
+
     auto end_insert = std::chrono::high_resolution_clock::now();
     upcxx::barrier();
 
@@ -93,6 +124,9 @@ int main(int argc, char** argv) {
     }
     upcxx::barrier();
 
+
+    // ===================== READ ===================
+
     auto start_read = std::chrono::high_resolution_clock::now();
 
     std::list<std::list<kmer_pair>> contigs;
@@ -100,11 +134,11 @@ int main(int argc, char** argv) {
         std::list<kmer_pair> contig;
         contig.push_back(start_kmer);
         while (contig.back().forwardExt() != 'F') {
-            kmer_pair kmer;
-            bool success = hashmap.find(contig.back().next_kmer(), kmer);
-            if (!success) {
-                throw std::runtime_error("Error: k-mer not found in hashmap.");
-            }
+            kmer_pair kmer = hashmap.find(contig.back().next_kmer()).wait();
+            // bool success = hashmap.find(contig.back().next_kmer(), kmer);
+            // if (!success) {
+            //     throw std::runtime_error("Error: k-mer not found in hashmap.");
+            // }
             contig.push_back(kmer);
         }
         contigs.push_back(contig);

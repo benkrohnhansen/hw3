@@ -16,8 +16,8 @@ struct HashMap {
     // Most important functions: insert and retrieve
     // k-mers from the hash table.
     bool insert(const kmer_pair& kmer);
-    bool find(const pkmer_t& key_kmer, kmer_pair& val_kmer);
-
+    // bool find(const pkmer_t& key_kmer, kmer_pair& val_kmer);
+    kmer_pair find(const pkmer_t& key_kmer);
     // Helper functions
 
     // Write and read to a logical data slot in the table.
@@ -42,6 +42,7 @@ bool HashMap::insert(const kmer_pair& kmer) {
     do {
         uint64_t slot = (hash + probe++) % size();
         success = request_slot(slot);
+        // std::cout << "Rank " << upcxx::rank_me() << " insert success: " << success << std::endl;
         if (success) {
             write_slot(slot, kmer);
         }
@@ -49,9 +50,11 @@ bool HashMap::insert(const kmer_pair& kmer) {
     return success;
 }
 
-bool HashMap::find(const pkmer_t& key_kmer, kmer_pair& val_kmer) {
+// bool HashMap::find(const pkmer_t& key_kmer, kmer_pair& val_kmer) {
+kmer_pair HashMap::find(const pkmer_t& key_kmer) {
     uint64_t hash = key_kmer.hash();
     uint64_t probe = 0;
+    kmer_pair val_kmer;
     bool success = false;
     do {
         uint64_t slot = (hash + probe++) % size();
@@ -62,7 +65,8 @@ bool HashMap::find(const pkmer_t& key_kmer, kmer_pair& val_kmer) {
             }
         }
     } while (!success && probe < size());
-    return success;
+    // return success;
+    return val_kmer;
 }
 
 bool HashMap::slot_used(uint64_t slot) { return used[slot] != 0; }
@@ -76,8 +80,66 @@ bool HashMap::request_slot(uint64_t slot) {
         return false;
     } else {
         used[slot] = 1;
+        // std::cout << "Rank " << upcxx::rank_me() << " used " << slot << " to 1\n"; 
         return true;
     }
 }
 
 size_t HashMap::size() const noexcept { return my_size; }
+
+
+class DistributedHashMap {
+    private:
+        HashMap* local_map;
+    
+        int get_target_rank(const uint64_t &hash) {
+            return hash % upcxx::rank_n();
+        }
+    
+    public:
+        using dist_hash_map = upcxx::dist_object<upcxx::global_ptr<HashMap>>;
+        dist_hash_map local_map_g;
+
+        DistributedHashMap(size_t local_size)
+            : local_map_g(upcxx::new_<HashMap>(local_size)) {
+            // Only valid on the local rank!
+            local_map = local_map_g->local();
+        }
+
+        upcxx::future<> insert(const kmer_pair& kmer) {
+            uint64_t hash = kmer.hash();
+            // std::cout << "from " << upcxx::rank_me() << " to " << get_target_rank(hash) << std::endl;
+            return upcxx::rpc(get_target_rank(hash),
+                // lambda to insert the key-value pair
+                [](dist_hash_map &lmap, const kmer_pair &kmer) {
+                // insert into the local map at the target
+                HashMap* local = lmap->local();
+                local->insert(kmer);
+                }, local_map_g, kmer);
+        }   
+
+        // upcxx::future<kmer_pair> find(const pkmer_t& key_kmer, kmer_pair& val_kmer) {
+        upcxx::future<kmer_pair> find(const pkmer_t& key_kmer) {
+            uint64_t hash = key_kmer.hash();
+            return upcxx::rpc(get_target_rank(hash),
+                // lambda to find the hash in the local map
+                [](dist_hash_map &lmap, const pkmer_t& key_kmer) -> kmer_pair {
+                HashMap* local = lmap->local();
+                return local->find(key_kmer);
+                // if (val_kmer == lmap->end()) return kmer_pair; // not found
+                }, local_map_g, key_kmer);
+        }
+        
+        // local! (fast)
+        void local_insert(const kmer_pair& kmer) {
+            local_map->insert(kmer);
+        }
+
+        upcxx::dist_object<upcxx::global_ptr<HashMap>>& get_dist_map() {
+            return local_map_g;
+        }
+    
+        size_t size() const {
+            return local_map->size();
+        }
+};
