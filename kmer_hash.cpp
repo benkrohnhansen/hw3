@@ -29,7 +29,7 @@ int main(int argc, char** argv) {
     }
 
     std::string kmer_fname = std::string(argv[1]);
-    std::string run_type = "";
+    std::string run_type = "verbose";
 
     if (argc >= 3) {
         run_type = std::string(argv[2]);
@@ -50,11 +50,6 @@ int main(int argc, char** argv) {
     }
 
     size_t n_kmers = line_count(kmer_fname);
-    
-    // if (run_type == "verbose") {
-    //     BUtil::print("Initializing hash table of size %d for %d kmers.\n", hash_table_size,
-    //         n_kmers);
-    //     }
         
     std::vector<kmer_pair> kmers = read_kmers(kmer_fname, upcxx::rank_n(), upcxx::rank_me());
     
@@ -66,20 +61,19 @@ int main(int argc, char** argv) {
     // size_t hash_table_size = n_kmers * (1.0 / 0.5);
     size_t hash_table_size = kmers.size() * (1.0 / 0.5);
 
-    // std::cout << "Rank " << upcxx::rank_me() << " kemrs size " << kmers 
-
     // DistributedHashMap hashmap(local_size);
     DistributedHashMap hashmap(hash_table_size);
+
+    if (run_type == "verbose") {
+        BUtil::print("Initializing hash table of size %d for %d kmers.\n", hash_table_size,
+                     n_kmers);
+    }
 
     upcxx::barrier();
 
     auto start = std::chrono::high_resolution_clock::now();
 
     std::vector<kmer_pair> start_nodes;
-
-    if (upcxx::rank_me() == 0) {
-        std::cout << "Size " << hashmap.size() << std::endl;
-    }
 
     upcxx::barrier();
     std::vector<upcxx::future<>> futures;
@@ -89,7 +83,7 @@ int main(int argc, char** argv) {
 
         if (kmer.backwardExt() == 'F') {
             start_nodes.push_back(kmer);
-            std::cout << "rank " << upcxx::rank_me() << " kmer " << kmer.kmer_str() << " " << kmer.backwardExt() << std::endl;
+            // std::cout << "rank " << upcxx::rank_me() << " kmer " << kmer.kmer_str() << " " << kmer.backwardExt() << std::endl;
         }
     }
 
@@ -104,7 +98,7 @@ int main(int argc, char** argv) {
     }
     upcxx::barrier();
 
-    std::cout << "Rank " << upcxx::rank_me() << " hash map size " << hashmap.size() << std::endl;
+    // std::cout << "Rank " << upcxx::rank_me() << " hash map size " << hashmap.size() << std::endl;
 
     // ===================== READ ===================
 
@@ -129,7 +123,7 @@ int main(int argc, char** argv) {
         const auto& first_contig = contigs.front();
         int count = 0;
         for (const auto& kmer : first_contig) {
-            std::cout << "kmer " << count << ": " << kmer.kmer_str() << " " << kmer.backwardExt() << kmer.forwardExt() << std::endl;
+            // std::cout << "kmer " << count << ": " << kmer.kmer_str() << " " << kmer.backwardExt() << kmer.forwardExt() << std::endl;
             if (++count >= 10) break;
         }
     }
@@ -137,6 +131,33 @@ int main(int argc, char** argv) {
     auto end_read = std::chrono::high_resolution_clock::now();
     upcxx::barrier();
     auto end = std::chrono::high_resolution_clock::now();
+
+    std::chrono::duration<double> read = end_read - start_read;
+    std::chrono::duration<double> insert = end_insert - start;
+    std::chrono::duration<double> total = end - start;
+
+    int numKmers = std::accumulate(
+        contigs.begin(), contigs.end(), 0,
+        [](int sum, const std::list<kmer_pair>& contig) { return sum + contig.size(); });
+
+    if (run_type != "test") {
+        BUtil::print("Assembled in %lf total\n", total.count());
+    }
+
+    if (run_type == "verbose") {
+        printf("Rank %d reconstructed %d contigs with %d nodes from %d start nodes."
+               " (%lf read, %lf insert, %lf total)\n",
+               upcxx::rank_me(), contigs.size(), numKmers, start_nodes.size(), read.count(),
+               insert.count(), total.count());
+    }
+
+    if (run_type == "test") {
+        std::ofstream fout(test_prefix + "_" + std::to_string(upcxx::rank_me()) + ".dat");
+        for (const auto& contig : contigs) {
+            fout << extract_contig(contig) << std::endl;
+        }
+        fout.close();
+    }
 
     upcxx::finalize();
     return 0;
