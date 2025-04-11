@@ -99,7 +99,6 @@ int main(int argc, char** argv) {
     }
     upcxx::barrier();
 
-    // std::cout << "Rank " << upcxx::rank_me() << " hash map size " << hashmap.size() << std::endl;
 
     // ===================== READ ===================
 
@@ -118,15 +117,6 @@ int main(int argc, char** argv) {
             contig.push_back(kmer);
         }
         contigs.push_back(contig);
-    }
-
-    if (upcxx::rank_me() == 1) {
-        const auto& first_contig = contigs.front();
-        int count = 0;
-        for (const auto& kmer : first_contig) {
-            // std::cout << "kmer " << count << ": " << kmer.kmer_str() << " " << kmer.backwardExt() << kmer.forwardExt() << std::endl;
-            if (++count >= 10) break;
-        }
     }
 
     auto end_read = std::chrono::high_resolution_clock::now();
