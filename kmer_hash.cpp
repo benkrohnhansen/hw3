@@ -31,7 +31,8 @@ int main(int argc, char** argv) {
     }
 
     std::string kmer_fname = std::string(argv[1]);
-    std::string run_type = "";
+    std::string run_type = "verbose";
+    // std::string run_type = "";
 
     if (argc >= 3) {
         run_type = std::string(argv[2]);
